@@ -6,6 +6,11 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
+// Debug environment variables (don't log JWT_SECRET in production)
+console.log('PORT:', process.env.PORT);
+console.log('MONGO_URI:', process.env.MONGO_URI);
+console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+
 // Create Express app
 const app = express();
 

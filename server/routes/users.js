@@ -9,23 +9,28 @@ const auth = require('../middleware/auth');
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
+    console.log('Register API called with body:', req.body);
     const { name, email, password, dateOfBirth } = req.body;
 
     // Check if user exists
     let user = await User.findOne({ email });
     if (user) {
+      console.log('Registration failed: User already exists');
       return res.status(400).json({ msg: 'User already exists' });
     }
 
-    // Create new user
+    // Create new user with username for backward compatibility
     user = new User({
       name,
+      username: name, // Set username to be the same as name for new users
       email,
       password,
       dateOfBirth
     });
 
+    console.log('About to save new user:', { name, email, dateOfBirth });
     await user.save();
+    console.log('User saved successfully with ID:', user.id);
 
     // Create JWT
     const payload = {
@@ -39,12 +44,16 @@ router.post('/register', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' },
       (err, token) => {
-        if (err) throw err;
+        if (err) {
+          console.error('JWT Sign Error:', err);
+          throw err;
+        }
+        console.log('JWT created successfully');
         res.json({ token });
       }
     );
   } catch (err) {
-    console.error(err.message);
+    console.error('Register Error:', err.message);
     res.status(500).send('Server error');
   }
 });
@@ -54,17 +63,23 @@ router.post('/register', async (req, res) => {
 // @access  Public
 router.post('/login', async (req, res) => {
   try {
+    console.log('Login API called with email:', req.body.email);
     const { email, password } = req.body;
 
     // Check if user exists
     let user = await User.findOne({ email });
     if (!user) {
+      console.log('Login failed: User not found');
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
+    console.log('User found with ID:', user.id);
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
+    // Check password using synchronous method
+    console.log('Checking password...');
+    const isMatch = user.comparePassword(password);
+    console.log('Password match result:', isMatch);
     if (!isMatch) {
+      console.log('Login failed: Invalid password');
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
 
@@ -80,12 +95,16 @@ router.post('/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' },
       (err, token) => {
-        if (err) throw err;
+        if (err) {
+          console.error('JWT Sign Error:', err);
+          throw err;
+        }
+        console.log('JWT created successfully');
         res.json({ token });
       }
     );
   } catch (err) {
-    console.error(err.message);
+    console.error('Login Error:', err.message);
     res.status(500).send('Server error');
   }
 });
